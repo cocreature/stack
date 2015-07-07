@@ -60,6 +60,7 @@ import qualified Paths_stack as Meta
 import           Stack.BuildPlan
 import           Stack.Constants
 import qualified Stack.Docker as Docker
+import qualified Stack.Image as Image
 import           Stack.Init
 import           Stack.Types
 import           Stack.Types.Internal
@@ -134,6 +135,8 @@ configFromConfigMonoid configStackRoot mproject configMonoid@ConfigMonoid{..} = 
 
          configConfigMonoid = configMonoid
 
+         configImage = Image.imgOptsFromMonoid configMonoidImageOpts
+
      origEnv <- getEnvOverride configPlatform
      let configEnvOverride _ = return origEnv
 
@@ -161,7 +164,7 @@ configFromConfigMonoid configStackRoot mproject configMonoid@ConfigMonoid{..} = 
 -- | Command-line arguments parser for configuration.
 configOptsParser :: Bool -> Parser ConfigMonoid
 configOptsParser docker =
-    (\opts systemGHC installGHC arch os jobs includes libs skipGHCCheck skipMsys -> mempty
+    (\opts imgOpts systemGHC installGHC arch os jobs includes libs skipGHCCheck skipMsys -> mempty
         { configMonoidDockerOpts = opts
         , configMonoidSystemGHC = systemGHC
         , configMonoidInstallGHC = installGHC
@@ -172,8 +175,10 @@ configOptsParser docker =
         , configMonoidExtraIncludeDirs = includes
         , configMonoidExtraLibDirs = libs
         , configMonoidSkipMsys = skipMsys
+        , configMonoidImageOpts = imgOpts
         })
     <$> Docker.dockerOptsParser docker
+    <*> Image.imgOptsParser
     <*> maybeBoolFlags
             "system-ghc"
             "using the system installed GHC (on the PATH) if available and a matching version"

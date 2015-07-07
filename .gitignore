@@ -13,3 +13,6 @@ dist/
 tags
 /_release/
 .vagrant/
+*.imports
+/.idea/
+/*.iml

@@ -50,6 +50,7 @@ import           Stack.New
 import qualified Stack.PackageIndex
 import           Stack.Repl
 import           Stack.Ide
+import qualified Stack.Image as Image
 import           Stack.Setup
 import           Stack.Solver (solveExtraDeps)
 import           Stack.Types
@@ -228,7 +229,13 @@ main = withInterpreterArgs stackProgName $ \args isInterpreter ->
                               "Clean up Docker images and containers"
                               dockerCleanupCmd
                               dockerCleanupOpts)
-             )
+             addSubCommands
+               Image.imgCmdName
+               "Subcommands specific to imaging"
+               (addCommand Image.imgDockerCmdName
+                "Build a Docker image for the project"
+                imgDockerCmd
+                Image.imgDockerOptsParser))
              -- commandsFromPlugins plugins pluginShouldHaveRun) https://github.com/commercialhaskell/stack/issues/322
      case eGlobalRun of
        Left (exitCode :: ExitCode) -> do
@@ -655,6 +662,9 @@ dockerCleanupCmd cleanupOpts go@GlobalOpts{..} = do
     runStackT manager globalLogLevel (lcConfig lc) globalTerminal $
         Docker.preventInContainer $
             Docker.cleanup cleanupOpts
+
+imgDockerCmd :: ImageDockerOptsMonoid -> GlobalOpts -> IO ()
+imgDockerCmd idom go@GlobalOpts{..} = withBuildConfig go ExecStrategy (Image.image idom)
 
 -- | Command sum type for conditional arguments.
 data Command

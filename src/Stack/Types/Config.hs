@@ -40,6 +40,7 @@ import           Path
 import           Stack.Types.BuildPlan (SnapName, renderSnapName, parseSnapName)
 import           Stack.Types.Docker
 import           Stack.Types.FlagName
+import           Stack.Types.Image
 import           Stack.Types.PackageIdentifier
 import           Stack.Types.PackageName
 import           Stack.Types.Version
@@ -103,6 +104,7 @@ data Config =
          -- ^ @ConfigMonoid@ used to generate this
          ,configConcurrentTests     :: !Bool
          -- ^ Run test suites concurrently
+         ,configImage               :: !ImageOpts
          }
 
 -- | Information on a single package index
@@ -436,6 +438,8 @@ data ConfigMonoid =
     -- ^ See: 'configExtraLibDirs'
     ,configMonoidConcurrentTests     :: !(Maybe Bool)
     -- ^ See: 'configConcurrentTests'
+    ,configMonoidImageOpts           :: !ImageOptsMonoid
+    -- ^ Image creation options.
     }
   deriving Show
 
@@ -457,6 +461,7 @@ instance Monoid ConfigMonoid where
     , configMonoidExtraIncludeDirs = Set.empty
     , configMonoidExtraLibDirs = Set.empty
     , configMonoidConcurrentTests = Nothing
+    , configMonoidImageOpts = mempty
     }
   mappend l r = ConfigMonoid
     { configMonoidDockerOpts = configMonoidDockerOpts l <> configMonoidDockerOpts r
@@ -476,6 +481,7 @@ instance Monoid ConfigMonoid where
     , configMonoidExtraIncludeDirs = Set.union (configMonoidExtraIncludeDirs l) (configMonoidExtraIncludeDirs r)
     , configMonoidExtraLibDirs = Set.union (configMonoidExtraLibDirs l) (configMonoidExtraLibDirs r)
     , configMonoidConcurrentTests = configMonoidConcurrentTests l <|> configMonoidConcurrentTests r
+    , configMonoidImageOpts = configMonoidImageOpts l <> configMonoidImageOpts r
     }
 
 instance FromJSON ConfigMonoid where
@@ -500,6 +506,7 @@ instance FromJSON ConfigMonoid where
          configMonoidExtraIncludeDirs <- obj .:? "extra-include-dirs" .!= Set.empty
          configMonoidExtraLibDirs <- obj .:? "extra-lib-dirs" .!= Set.empty
          configMonoidConcurrentTests <- obj .:? "concurrent-tests"
+         configMonoidImageOpts <- obj .:? T.pack "image" .!= mempty
          return ConfigMonoid {..}
 
 -- | Newtype for non-orphan FromJSON instance.
